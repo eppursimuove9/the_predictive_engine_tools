@@ -71,7 +71,7 @@ export default function UnitEconomics() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={m.series} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
               <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" ticks={[0, 6, 12, 18, 24, 30, 36]} tickFormatter={(v) => `M${v}`} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+              <XAxis dataKey="month" ticks={Array.from({ length: Math.floor((m.series.length - 1) / 12) + 1 }, (_, n) => n * 12)} tickFormatter={(v) => `M${v}`} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
               <YAxis tickFormatter={(v) => fmtMoney(v)} axisLine={false} tickLine={false} width={70} tick={{ fill: '#64748b', fontSize: 12 }} />
               <RechartsTooltip labelFormatter={(v) => `Month ${v}`} formatter={(v) => [fmtMoney(v), 'Gross profit so far']} />
               <ReferenceLine y={Math.round(m.cac)} stroke="#0B1120" strokeWidth={2} strokeDasharray="5 4" label={{ position: 'insideTopRight', value: `Cost to win: ${fmtMoney(m.cac)}`, fill: '#0B1120', fontWeight: 700, fontSize: 12 }} />

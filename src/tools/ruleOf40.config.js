@@ -1,4 +1,4 @@
-import { fmtMoney2, fmtX, fmtPct1 } from '../shared/format.js';
+import { fmtMoney, fmtMoney2, fmtX, fmtPct1, fmtNum } from '../shared/format.js';
 import { trio, div } from './_math.js';
 
 export const defaults = { arr: 12000000, arrPrev: 8500000, fcfMargin: -35, smSpend: 8000000, grossMargin: 75 };
@@ -47,6 +47,13 @@ export const chart = {
   note: 'Growth plus free cash flow margin gives the score. The company meets the rule when the score bar reaches the target bar.',
   caption: (i, m) => `Score ${fmtPct1(m.score)} versus a target of 40.`,
 };
+export const insightsTitle = 'Sales and marketing efficiency';
+export const insights = (i, m) => [
+  m.payback === null
+    ? 'Net new ARR is zero or negative, so sales and marketing spend has no payback at this gross margin.'
+    : `Sales and marketing spend pays back in ${m.payback < 24 ? fmtNum(m.payback, 1) : Math.round(m.payback)} months of gross profit at a ${i.grossMargin}% gross margin.`,
+  `Net new ARR in the year was ${fmtMoney(m.netNew)} on ${fmtMoney(i.smSpend)} of sales and marketing.`,
+];
 export const scenarios = trio(
   (i) => ({ ...i, arr: i.arrPrev + (i.arr - i.arrPrev) * 0.75, fcfMargin: i.fcfMargin - 5 }),
   (i) => ({ ...i, arr: i.arrPrev + (i.arr - i.arrPrev) * 1.2, fcfMargin: i.fcfMargin + 5 }),
@@ -80,5 +87,5 @@ export default {
     { key: 'smSpend', label: 'Sales and Marketing Spend, Last Year', min: 10000, max: 200000000, step: 10000, prefix: '$', tooltip: 'Total sales and marketing spend over the same twelve months.' },
     { key: 'grossMargin', label: 'Gross Margin', min: 10, max: 95, suffix: '%', advanced: true, tooltip: 'Used for the sales and marketing payback.' },
   ], advancedSummary: (i) => `Gross margin ${i.grossMargin}%` }],
-  model, verdictFor, kpis, results, chart, scenarios, scenarioNote, sens, sensMetric, bench, planning, how,
+  model, verdictFor, kpis, results, chart, insights, insightsTitle, scenarios, scenarioNote, sens, sensMetric, bench, planning, how,
 };

@@ -28,19 +28,20 @@ export function ControlSlider({
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-between items-center">
-        <label className="font-semibold text-sm text-slate-700 flex items-center gap-1">
+      <div className="flex justify-between items-center gap-x-3 gap-y-1 flex-wrap">
+        <label className="font-semibold text-sm text-slate-700 flex items-center gap-1 min-w-0">
           {label}
           {tooltip && <HelpTip text={tooltip} />}
         </label>
-        <div className="flex items-center">
+        <div className="flex items-center ml-auto max-w-full">
           {prefix && <span className="text-slate-500 font-semibold mr-1">{prefix}</span>}
           <input 
             type="number" value={inputValue} min={min} max={max} step={step}
             onChange={handleInputChange} onBlur={handleInputBlur}
-            className={`w-24 text-right font-bold border rounded px-2 py-1 outline-none focus:ring-2 transition-all ${highlightClass}`}
+            style={{ width: `${Math.min(Math.max(inputValue.length + 3, 7), 18)}ch` }}
+            className={`min-w-0 text-right font-bold tabular-nums border rounded px-2 py-1 outline-none focus:ring-2 transition-all ${highlightClass}`}
           />
-          {suffix && <span className="text-slate-500 font-semibold ml-1">{suffix}</span>}
+          {suffix && <span className="text-slate-500 font-semibold ml-1 whitespace-nowrap">{suffix}</span>}
         </div>
       </div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={handleSliderChange} className={`w-full cursor-pointer ${accentClass}`} />
@@ -169,14 +170,17 @@ export function PresetBar({ presets, activeId, onLoad, onReset }) {
         <div className="text-xs font-bold uppercase tracking-wider text-slate-600">Start from an example</div>
         <button onClick={onReset} className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"><RotateCcw className="w-3.5 h-3.5" /> New simulation</button>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex flex-col gap-2">
         {presets.map((pr) => {
           const active = activeId === pr.id;
           return (
             <button key={pr.id} onClick={() => onLoad(pr)} aria-pressed={active}
-              className={`min-w-0 rounded-lg border-2 px-1.5 sm:px-2 py-2 text-left break-words transition-colors ${active ? 'border-[#f52e01] bg-orange-50' : 'border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
-              <div className={`text-xs sm:text-sm font-bold leading-tight flex items-center justify-between gap-1 ${active ? 'text-[#f52e01]' : 'text-slate-900'}`}>{pr.name}{active && <span aria-hidden="true">✓</span>}</div>
-              <div className="text-xs text-slate-600 leading-tight">{pr.note}</div>
+              className={`w-full min-w-0 flex items-center gap-3 rounded-lg border-2 px-3 py-2 text-left transition-colors ${active ? 'border-[#f52e01] bg-orange-50' : 'border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+              <span className="min-w-0 flex-1">
+                <span className={`block text-sm font-bold leading-tight ${active ? 'text-[#f52e01]' : 'text-slate-900'}`}>{pr.name}</span>
+                <span className="block text-xs text-slate-600 leading-snug mt-0.5">{pr.note}</span>
+              </span>
+              {active && <span aria-hidden="true" className="shrink-0 text-[#f52e01] font-bold">✓</span>}
             </button>
           );
         })}

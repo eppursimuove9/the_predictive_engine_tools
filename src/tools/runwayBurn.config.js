@@ -1,12 +1,12 @@
 import { fmtMoney, fmtMoney2, fmtX } from '../shared/format.js';
 import { trio, div } from './_math.js';
 
-export const defaults = { cash: 2400000, burn: 150000, newArr: 60000, burnGrowth: 2, arrGrowth: 3 };
-export const limits = { cash: [10000, 1000000000], burn: [1000, 50000000], newArr: [0, 50000000], burnGrowth: [-5, 15], arrGrowth: [-5, 15] };
+export const defaults = { cash: 2400000, burn: 150000, newArr: 60000, burnGrowth: 2 };
+export const limits = { cash: [10000, 1000000000], burn: [1000, 50000000], newArr: [0, 50000000], burnGrowth: [-5, 15] };
 export const presets = [
-  { id: 'seed', name: 'Seed stage', note: 'Burning fast', inputs: { cash: 1200000, burn: 90000, newArr: 25000, burnGrowth: 2, arrGrowth: 4 } },
-  { id: 'a', name: 'Series A', note: 'Efficient growth', inputs: { cash: 6000000, burn: 350000, newArr: 220000, burnGrowth: 1.5, arrGrowth: 3 } },
-  { id: 'lean', name: 'Capital efficient', note: 'Burn multiple under 1', inputs: { cash: 4000000, burn: 120000, newArr: 150000, burnGrowth: 1, arrGrowth: 2 } },
+  { id: 'seed', name: 'Seed stage', note: 'Burning fast', inputs: { cash: 1200000, burn: 90000, newArr: 25000, burnGrowth: 2 } },
+  { id: 'a', name: 'Series A', note: 'Efficient growth', inputs: { cash: 6000000, burn: 350000, newArr: 220000, burnGrowth: 1.5 } },
+  { id: 'lean', name: 'Capital efficient', note: 'Burn multiple under 1', inputs: { cash: 4000000, burn: 120000, newArr: 150000, burnGrowth: 1 } },
 ];
 const band = (x) => (x === null ? 'n/a' : (x < 1 ? 'amazing' : (x < 1.5 ? 'great' : (x < 2 ? 'good' : (x < 3 ? 'suspect' : 'bad')))));
 export function model(i) {
@@ -84,7 +84,6 @@ export default {
     { key: 'burn', label: 'Net Burn per Month', min: 1000, max: 5000000, step: 1000, prefix: '$', tooltip: 'Cash out minus cash in, per month.' },
     { key: 'newArr', label: 'Net New ARR per Month', min: 0, max: 5000000, step: 1000, prefix: '$', tooltip: 'New plus expansion ARR, minus churn and downgrades, per month.' },
     { key: 'burnGrowth', label: 'Burn Growth per Month', min: -5, max: 15, step: 0.5, suffix: '%', advanced: true, tooltip: 'How fast monthly burn grows, for example as you hire.' },
-    { key: 'arrGrowth', label: 'Net New ARR Growth per Month', min: -5, max: 15, step: 0.5, suffix: '%', advanced: true, tooltip: 'Shown for reference. The runway uses net burn, which already includes revenue.' },
   ], advancedSummary: (i) => `Burn grows ${i.burnGrowth}% a month` }],
   model, verdictFor, kpis, results, chart, scenarios, scenarioNote, sens, sensMetric, bench, planning, how,
 };

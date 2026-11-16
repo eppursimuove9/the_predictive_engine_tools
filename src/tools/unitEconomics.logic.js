@@ -18,16 +18,17 @@ export function model(i) {
   const ltv = monthlyGp * lifetime;
   const ltvCac = ltv / cac;
   const paybackStd = cac / monthlyGp;
+  // Break-even month, searched up to the lifetime cap so it agrees with LTV.
+  let breakeven = null;
+  { let cm = 0; let sv = 1; for (let t = 1; t <= i.lifetimeCap; t++) { cm += monthlyGp * sv; sv *= (1 - c); if (cm >= cac) { breakeven = t; break; } } }
   // Cohort view: cumulative gross profit of an average customer, month by month, counting churn.
+  // The chart runs long enough to show the break-even point (at least 36 months, in steps of 12).
+  const horizon = Math.min(120, Math.max(36, Math.ceil(((breakeven || 0) + 6) / 12) * 12));
   const series = [];
-  let cum = 0; let surv = 1; let breakeven = null;
-  for (let t = 0; t <= 36; t++) {
+  let cum = 0; let surv = 1;
+  for (let t = 0; t <= horizon; t++) {
     if (t > 0) { cum += monthlyGp * surv; surv *= (1 - c); }
     series.push({ month: t, cum: Math.round(cum), cac: Math.round(cac) });
-  }
-  { // break-even month, searched up to the lifetime cap so it agrees with LTV
-    let cm = 0; let s = 1;
-    for (let t = 1; t <= i.lifetimeCap; t++) { cm += monthlyGp * s; s *= (1 - c); if (cm >= cac) { breakeven = t; break; } }
   }
   const maxCac = ltv / i.targetRatio;
   const lifetimeNeeded = (i.targetRatio * cac) / monthlyGp;

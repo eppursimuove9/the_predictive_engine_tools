@@ -17,7 +17,7 @@ export function model(i) {
   const retainedGp = retainedArr * (i.margin / 100);
   const net = retainedGp - incCost;
   const series = [];
-  for (const r of [10, 20, 30, 40, 50, 75, 100, 150, 200]) series.push({ k: r, n: Math.ceil(i.customers / r) });
+  for (const r of [...new Set([10, 20, 30, 40, 50, 75, 100, 150, 200, i.perCsm])].sort((a, b) => a - b)) series.push({ k: r, n: Math.ceil(i.customers / r) });
   return {
     needed, gap, add, incCost, totalCost: needed * i.csmCost, costPctArr: (needed * i.csmCost / i.arr) * 100, arrPerCsm: i.arr / needed,
     retainedArr, retainedGp, net, roi: div(net, incCost) === null ? null : (net / incCost) * 100,
@@ -50,10 +50,10 @@ export const results = [
   { label: 'Break-even share of ARR to keep', get: (m) => m.breakEvenCut, kind: 'pp' },
 ];
 export const chart = {
-  title: 'Managers needed at each coverage ratio', type: 'bar', x: 'k', xKind: 'int', xTitle: 'Accounts per manager', xFormat: (v) => `${v}`, yKind: 'int', data: (i, m) => m.series,
+  title: 'Managers needed at each coverage ratio', type: 'bar', x: 'k', xKind: 'int', xTitle: 'Accounts per manager', xFormat: (v) => `${v}`, yKind: 'int', highlightX: (i) => i.perCsm, data: (i, m) => m.series,
   series: [{ key: 'n', name: 'Managers needed' }],
   note: 'How many customer success managers your number of accounts needs at each coverage ratio. A lower ratio means more attention per account and more cost.',
-  caption: (i, m) => `At ${i.perCsm} accounts per manager you need ${m.needed}.`,
+  caption: (i, m) => `Your ratio (${i.perCsm} accounts per manager, in orange) needs ${m.needed}.`,
 };
 export const scenarios = trio(
   (i) => ({ ...i, churnCut: i.churnCut * 0.5, csmCost: i.csmCost * 1.1 }),

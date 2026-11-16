@@ -30,7 +30,7 @@ export function model(i) {
   const p2 = Math.min(0.99, p1 * (1 + i.lift / 100));
   const extraConvYear = i.traffic * 52 * (p2 - p1);
   const series = [];
-  for (const l of [5, 10, 15, 20, 30, 40, 50, 75, 100]) series.push({ k: l, n: sampleSize(i.baseline, l, i.confidence, i.power, i.variants) });
+  for (const l of [...new Set([5, 10, 15, 20, 30, 40, 50, 75, 100, i.lift])].sort((a, b) => a - b)) series.push({ k: l, n: sampleSize(i.baseline, l, i.confidence, i.power, i.variants) });
   return { p1, p2, perVariant, total, weeks, days: weeks === null ? null : Math.ceil(weeks * 7), extraConvYear, valueYear: extraConvYear * i.valuePerConv, series };
 }
 export function verdictFor(i, m) {
@@ -58,7 +58,7 @@ export const results = [
   { label: 'Value per year if it wins', get: (m) => m.valueYear, kind: 'money' },
 ];
 export const chart = {
-  title: 'Smaller lifts need far more visitors', type: 'line', x: 'k', xKind: 'pp0', xTitle: 'Lift to detect', xFormat: (v) => `${v}%`, yKind: 'int',
+  title: 'Smaller lifts need far more visitors', type: 'line', x: 'k', xKind: 'pp0', numericX: true, refX: (i) => ({ x: i.lift, label: `Your lift ${i.lift}%` }), xTitle: 'Lift to detect', xFormat: (v) => `${v}%`, yKind: 'int',
   data: (i, m) => m.series.filter((r) => r.n !== null), series: [{ key: 'n', name: 'Visitors per variant' }],
   note: 'Visitors needed in each variant for every size of lift you could try to detect, at your confidence and power. Halving the lift roughly quadruples the visitors.',
   caption: (i) => `At your ${i.lift}% lift the test needs the visitors shown above. If that is too many, test a bigger change.`,

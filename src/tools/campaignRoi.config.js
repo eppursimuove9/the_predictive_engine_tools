@@ -16,7 +16,8 @@ export function model(i) {
   const monthlyGp = (customers * i.acv * (i.margin / 100)) / 12;
   // Gross profit builds month by month for the horizon, then stops (no value counted beyond it).
   const series = [];
-  for (let t = 0; t <= 36; t++) series.push({ k: t, cum: Math.round(monthlyGp * Math.min(t, i.years * 12)), });
+  const horizon = Math.max(24, Math.ceil(i.years * 12) + 6);
+  for (let t = 0; t <= horizon; t++) series.push({ k: t, cum: Math.round(monthlyGp * Math.min(t, i.years * 12)), });
   let payback = null;
   for (let t = 1; t <= i.years * 12; t++) { if (monthlyGp * t >= cost) { payback = cost > 0 ? cost / monthlyGp : 0; break; } }
   return {

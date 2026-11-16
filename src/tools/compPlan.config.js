@@ -25,7 +25,7 @@ export function model(i) {
   const bookingsPerRep = i.quota * a;
   const costPerDollar = div(costPerRep, bookingsPerRep);
   const series = [];
-  for (let p = 20; p <= 200; p += 10) series.push({ k: p, c: Math.round(((payAt(i, p / 100) * (1 + i.overhead / 100)) / (i.quota * (p / 100))) * 1000) / 10 });
+  for (const p of [...new Set([...Array.from({ length: 19 }, (_, n) => 20 + n * 10), i.attainment])].sort((a, b) => a - b)) series.push({ k: p, c: Math.round(((payAt(i, p / 100) * (1 + i.overhead / 100)) / (i.quota * (p / 100))) * 1000) / 10 });
   return {
     base, variable, payPerRep, costPerRep, bookingsPerRep, costPerDollar,
     commissionRate: (variable / i.quota) * 100, quotaToOte: i.quota / i.ote,
@@ -60,7 +60,7 @@ export const results = [
   { label: 'Team bookings', get: (m) => m.totalBookings, kind: 'money', scenario: true },
 ];
 export const chart = {
-  title: 'Comp cost as a share of bookings, by attainment', type: 'line', x: 'k', xKind: 'pp0', xTitle: 'Attainment', xFormat: (v) => `${v}%`, yKind: 'pp',
+  title: 'Comp cost as a share of bookings, by attainment', type: 'line', x: 'k', xKind: 'pp0', numericX: true, refX: (i) => ({ x: i.attainment, label: `Your case ${i.attainment}%` }), xTitle: 'Attainment', xFormat: (v) => `${v}%`, yKind: 'pp',
   data: (i, m) => m.series, series: [{ key: 'c', name: 'Comp cost, % of bookings' }],
   note: 'Pay plus overhead divided by the bookings a rep brings in. Low attainment is expensive because base pay is fixed. The kink at 100% is where accelerators start.',
   caption: (i, m) => `At 100% of quota the cost is ${fmtPct1(m.costAt100)} of bookings. At your ${i.attainment}% it is ${m.costPct === null ? 'n/a' : fmtPct1(m.costPct)}.`,

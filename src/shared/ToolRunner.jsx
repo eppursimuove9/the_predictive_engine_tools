@@ -2,7 +2,7 @@
 // Every config-driven tool gets the same pattern: examples, verdict, four KPIs, a chart, then email-locked scenarios,
 // sensitivity, benchmarks, PDF and Excel.
 import { useMemo } from 'react';
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, Cell, AreaChart, Area, ReferenceLine, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Target, BookOpen } from 'lucide-react';
 import { ControlSlider, ToolHeader, PresetBar, StartingValuesNote, VerdictCard, KpiGrid, ToolLayout, ControlGroup, AdvancedGroup, Card, CollapsibleSection, ScenarioTable, TornadoChart, BenchmarkList, ExportPanel, HowToRead } from './ui.jsx';
 import { fmtMoney, fmtKind, signedMoney } from './format.js';
@@ -67,15 +67,16 @@ export function makeTool(cfg) {
     const axes = (
       <>
         <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey={ch.x} tickFormatter={ch.xFormat} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+        <XAxis dataKey={ch.x} {...(ch.numericX ? { type: 'number', domain: ['dataMin', 'dataMax'] } : {})} tickFormatter={ch.xFormat} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
         <YAxis tickFormatter={yFmt} axisLine={false} tickLine={false} width={72} tick={{ fill: '#64748b', fontSize: 12 }} />
         <RechartsTooltip labelFormatter={ch.xFormat ? (v) => ch.xFormat(v) : undefined} formatter={(v, n) => [fmtKind(ch.yKind || 'money', v), n]} />
         {ch.series.length > 1 && <Legend />}
+        {ch.refX && <ReferenceLine x={ch.refX(inputs, m).x} stroke="#f52e01" strokeWidth={2} label={{ position: 'insideTopLeft', value: ch.refX(inputs, m).label, fill: '#f52e01', fontWeight: 700, fontSize: 12 }} />}
         {ref && <ReferenceLine y={ref.y} stroke="#0B1120" strokeWidth={2} strokeDasharray="5 4" label={{ position: 'insideTopRight', value: ref.label, fill: '#0B1120', fontWeight: 700, fontSize: 12 }} />}
       </>
     );
     const chartEl = ch.type === 'bar'
-      ? <BarChart {...common}>{axes}{ch.series.map((s, k) => <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color || COLORS[k % 4]} radius={[4, 4, 0, 0]} stackId={ch.stacked ? 'a' : undefined} />)}</BarChart>
+      ? <BarChart {...common}>{axes}{ch.series.map((s, k) => <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color || COLORS[k % 4]} radius={[4, 4, 0, 0]} stackId={ch.stacked ? 'a' : undefined}>{ch.highlightX && chartRows.map((row, n) => <Cell key={n} fill={row[ch.x] === ch.highlightX(inputs, m) ? '#f52e01' : (s.color || COLORS[k % 4])} />)}</Bar>)}</BarChart>
       : (ch.type === 'area'
         ? <AreaChart {...common}>{axes}{ch.series.map((s, k) => <Area key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color || COLORS[k % 4]} fill={s.color || COLORS[k % 4]} fillOpacity={0.15} strokeWidth={3} stackId={ch.stacked ? 'a' : undefined} />)}</AreaChart>
         : <LineChart {...common}>{axes}{ch.series.map((s, k) => <Line key={s.key} type="monotone" dataKey={s.key} name={s.name} stroke={s.color || COLORS[k % 4]} strokeWidth={3} dot={false} />)}</LineChart>);
@@ -90,14 +91,14 @@ export function makeTool(cfg) {
           {ch.caption && <p className="mt-3 text-sm text-slate-700">{ch.caption(inputs, m)}</p>}
         </Card>
 
+        {insights && insights.length > 0 && (
+          <Card title={cfg.insightsTitle || 'What it would take'} icon={<Target className="w-5 h-5 text-slate-700" />}>
+            <ul className="text-sm text-slate-700 space-y-1 list-disc pl-5">{insights.map((t, k) => <li key={k}>{t}</li>)}</ul>
+          </Card>
+        )}
+
         <CollapsibleSection title="Scenarios and sensitivity" icon={<Target className="w-5 h-5 text-slate-700" />} locked={!isUnlocked} onUnlock={openUnlock}>
           <div className="space-y-6">
-            {insights && insights.length > 0 && (
-              <div>
-                <h4 className="font-bold text-slate-900">{cfg.insightsTitle || 'What it would take'}</h4>
-                <ul className="mt-2 text-sm text-slate-700 space-y-1 list-disc pl-5">{insights.map((t, k) => <li key={k}>{t}</li>)}</ul>
-              </div>
-            )}
             <div>
               <h4 className="font-bold text-slate-900 mb-1">Scenarios</h4>
               <p className="text-sm text-slate-600 mb-3">{cfg.scenarioNote}</p>

@@ -20,7 +20,7 @@ export function model(i) {
   const denom = d + m;
   const breakEven = denom > 0 ? (-d / denom) * 100 : null;
   const series = [];
-  for (let x = -40; x <= 40; x += 5) series.push({ k: x, d: Math.round(i.customers * (1 + x / 100) * gpUnit1 - gp0) });
+  for (const x of [...new Set([-40, -35, -30, -25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30, 35, 40, i.volume])].sort((a, b) => a - b)) series.push({ k: x, d: Math.round(i.customers * (1 + x / 100) * gpUnit1 - gp0) });
   return { unitCost, gp0, gp1, change: gp1 - gp0, newPrice, gpUnit1, newMargin: newPrice > 0 ? (gpUnit1 / newPrice) * 100 : null, breakEven, rev0: i.customers * i.price, rev1: i.customers * (1 + v) * newPrice, series };
 }
 export function verdictFor(i, m) {
@@ -51,7 +51,7 @@ export const results = [
   { label: 'Gross margin after', get: (m) => m.newMargin, kind: 'pp' },
 ];
 export const chart = {
-  title: 'Change in gross profit by change in customers', type: 'line', x: 'k', xKind: 'pp0', xTitle: 'Change in customers', xFormat: (v) => `${v > 0 ? '+' : ''}${v}%`, yKind: 'money', data: (i, m) => m.series,
+  title: 'Change in gross profit by change in customers', type: 'line', x: 'k', xKind: 'pp0', numericX: true, refX: (i) => ({ x: i.volume, label: `Your case ${i.volume > 0 ? '+' : ''}${i.volume}%` }), xTitle: 'Change in customers', xFormat: (v) => `${v > 0 ? '+' : ''}${v}%`, yKind: 'money', data: (i, m) => m.series,
   series: [{ key: 'd', name: 'Change in gross profit' }],
   note: 'Yearly gross profit compared with today, for each possible change in customers after the price change. Where the line crosses zero is the break-even point.',
   ref: () => ({ y: 0, label: 'No change in gross profit' }),
