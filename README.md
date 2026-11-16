@@ -2,14 +2,18 @@
 
 Sitio gratuito con calculadoras para GTM / RevOps. Una portada y una página por herramienta.
 
-| Ruta | Herramienta |
+22 herramientas en 6 categorías (menú **Tools** y rutas `/category/<slug>`):
+
+| Categoría | Herramientas |
 |---|---|
-| `/` | Portada |
-| `/tools/unit-economics` | CAC, LTV y payback |
-| `/tools/pipeline-coverage` | Embudo y cobertura de pipeline |
-| `/tools/sales-capacity` | Capacidad y cuota de ventas |
-| `/tools/retention-impact` | Churn, NRR y retención |
-| `/tools/verification-tax` | ROI de code review (ingeniería) |
+| GTM | CAC/LTV/Payback, Pipeline y Embudo, Sales Velocity, Price Change Break-even |
+| Marketing | Campaign ROI/ROAS, A/B Test Planner, Email List Value |
+| RevOps | Sales Capacity, Comp Plan Cost, Sales Rep Turnover, Process Automation ROI, GTM Tech Stack Waste |
+| Customer Success | Retention/NRR, Support Deflection, CS Capacity |
+| Finanzas | Cash Runway y Burn Multiple, Rule of 40, Investment Case (NPV/IRR), Build vs Buy |
+| Ingeniería | Code Review ROI (Verification Tax), Technical Debt, Downtime Cost |
+
+Cada herramienta vive en `/tools/<slug>` (ver `src/registry.js`).
 
 ## Desarrollo local
 ```
@@ -28,7 +32,11 @@ npm run dev
 Nunca subas claves al repo: `.env` ya está en `.gitignore`.
 
 ## Estructura
-- `src/registry.js` — lista de herramientas. Para agregar una nueva: crea el componente en `src/tools/` y añádela aquí.
+- `src/registry.js` — categorías y herramientas. Para agregar una nueva: crea `src/tools/miHerramienta.config.js` (copia una existente, p. ej. `salesVelocity.config.js`) y añádela aquí con `cfg('miHerramienta')`.
 - `src/shared/` — componentes y utilidades compartidas (UI, router, desbloqueo por email, PDF/Excel, sensibilidad).
 - `src/tools/*.logic.js` — modelos de cálculo puros, sin React.
 - `api/subscribe.js` — suscripción a Beehiiv.
+- `src/shared/ToolRunner.jsx` — motor que convierte un `*.config.js` en la página completa (inputs, KPIs, escenarios, sensibilidad, benchmarks, PDF y Excel).
+
+## Excel
+Los Excel se generan con ExcelJS: una hoja por sección (Summary, Assumptions, Scenarios, Sensitivity, Benchmarks), formatos numéricos reales (moneda, %, múltiplos), encabezados fijos y listos para imprimir. No incluyen gráficos incrustados.

@@ -4,7 +4,8 @@ import { TrendingUp, Users, Lock, Download, ChevronRight, Info, Loader2, Mail, F
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ControlSlider, HelpTip, OptionalControl, CollapsibleSection, LockedSection } from '../shared/ui.jsx';
-import { fmtMoney, signedMoney, fmtPct } from '../shared/format.js';
+import { fmtMoney, signedMoney, fmtPct, cell } from '../shared/format.js';
+import { downloadXlsx, sensSection, benchSection } from '../shared/report.js';
 import { useUnlock } from '../shared/unlock.jsx';
 
 // Set to false to lock the As-Is panel behind the subscription too.
@@ -284,68 +285,59 @@ const BENCHMARKS = [
     source: 'Morph comparison of CodeRabbit and Greptile', url: 'https://www.morphllm.com/comparisons/coderabbit-vs-greptile' },
 ];
 
-// Builds a values-only workbook (no formulas, on purpose)
-function buildWorkbook(XLSX, { inputs, m, scenarioResults, tornado, tornadoLabel }) {
-  const usd = '$#,##0;-$#,##0', pct = '0%', hrs = '0.0';
-  const c = (v, z) => ({ v, t: 'n', z });
-  const wb = XLSX.utils.book_new();
-  const add = (name, rows, widths) => {
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = widths.map((w) => ({ wch: w }));
-    XLSX.utils.book_append_sheet(wb, ws, name);
+// Report spec for the Excel export (see shared/report.js). Values are real numbers with real number formats.
+function buildReport({ inputs, m, scenarioResults, tornado, tornadoLabel, verdictText }) {
+  const money = (v) => cell(v, 'money'); const hrs = (v) => cell(v, 'num1'); const pc = (v) => cell(v, 'pp0');
+  const sv = (v) => (v === null ? 'Not reachable' : pc(v));
+  const bench = BENCHMARKS.map((b, k) => ({
+    label: b.label, value: b.value(inputs), unit: b.unit, range: b.range, note: b.note, source: b.source, url: b.url,
+    strength: ['survey', 'survey', 'secondary', 'rule'][k],
+  }));
+  return {
+    title: 'Code Review ROI: Verification Tax', fileName: 'ROI_Model_Verification_Tax', verdict: verdictText,
+    sections: [
+      { sheet: 'Summary', heading: 'Key results (steady state, per year)', rows: [
+        ['Realized hard savings', money(m.realizedHardSavings)], ['Avoided cost at 100% (non-cash)', money(m.annualTechDebtValue)],
+        ['Avoided cost after confidence', money(m.confidenceAdjustedAvoidedCost)], ['Annual software cost', money(m.calculatedSoftwareCost)],
+        ['Conservative ROI', pc(m.roiPercentage)], ['Strategic ROI', pc(m.strategicRoi)],
+        ['3-year net, hard savings only', money(m.threeYear.hardNet)], ['3-year net, incl. avoided cost', money(m.threeYear.strategicNet)] ] },
+      { sheet: 'Assumptions', heading: 'Assumptions', rows: [
+        ['Active developers', cell(inputs.devs, 'int')], ['LOC per developer per day', cell(inputs.locPerDev, 'int')],
+        ['Current AI automation', pc(inputs.automation)], ['Target AI automation', pc(inputs.targetAutomation)],
+        ['Senior engineers', cell(inputs.seniors, 'int')], ['Review hours per senior per day', hrs(inputs.dailyReviewHoursPerSenior)],
+        ['Minutes to audit 500 LOC', cell(inputs.minsPer500, 'int')], ['Senior hourly rate', cell(inputs.hourlyRate, 'money2')],
+        ['Human-in-the-loop', pc(inputs.humanInTheLoop)], ['Savings realization', pc(inputs.savingsRealizationRate)],
+        ['Confidence in avoided cost', pc(inputs.avoidedCostConfidence)],
+        ['Pricing model', inputs.pricingModel === 'saas' ? 'SaaS license' : 'API tokens'],
+        ['Annual software cost', money(m.calculatedSoftwareCost)], ['One-time setup cost', money(inputs.implementationCost)],
+        ['Adoption ramp (months)', cell(inputs.rampMonths, 'int')], ['Current AI tool cost per year', money(inputs.currentToolCost)],
+        ['Working days per year', cell(inputs.workingDays, 'int')],
+        ['How the cleared backlog is valued', inputs.avoidedBasis === 'defects' ? 'Defects avoided' : 'Review effort'],
+        ['Escaped defects per 1k unreviewed LOC', cell(inputs.defectsPer1kLoc, 'num2')], ['Cost per escaped defect', money(inputs.costPerDefect)],
+        ['Code volume growth per year', pc(inputs.volumeGrowth)], ['Hourly rate growth per year', pc(inputs.salaryGrowth)], ['Discount rate', pc(inputs.discountRate)] ] },
+      { sheet: 'As-Is vs To-Be', heading: 'Review workload per day (hours)', head: ['Per day', 'As-Is', 'To-Be'], rows: [
+        ['Review demand before automation', hrs(m.rawReviewDemandHours), hrs(m.rawReviewDemandHours)],
+        ['Human review demand', hrs(m.asIsHumanDemand), hrs(m.toBeTotalHumanDemand)],
+        ['Senior capacity', hrs(m.capacityHours), hrs(m.capacityHours)],
+        ['Human review executed', hrs(m.asIsExecuted), hrs(m.toBeExecuted)],
+        ['Backlog', hrs(m.asIsBacklog), hrs(m.toBeBacklog)],
+        ['Reviewed by AI', hrs(m.asIsNetAiHandled), hrs(m.toBeNetAiHandled)] ] },
+      { sheet: 'Scenarios', heading: 'Scenarios', head: ['Result', ...scenarioResults.map((x) => x.label)], rows: [
+        ['Net change in yearly cost', ...scenarioResults.map((x) => money(x.m.calculatedSoftwareCost - x.m.realizedHardSavings))],
+        ['Backlog removed per day (h)', ...scenarioResults.map((x) => hrs(x.m.techDebtClearedDailyHours))],
+        ['Conservative ROI', ...scenarioResults.map((x) => pc(x.m.roiPercentage))],
+        ['Strategic ROI', ...scenarioResults.map((x) => pc(x.m.strategicRoi))],
+        ['3-year net, hard savings only', ...scenarioResults.map((x) => money(x.m.threeYear.hardNet))],
+        ['3-year net, incl. avoided cost', ...scenarioResults.map((x) => money(x.m.threeYear.strategicNet))],
+        ['3-year present value, hard savings only', ...scenarioResults.map((x) => money(x.m.threeYear.hardNpv))],
+        ['3-year present value, incl. avoided cost', ...scenarioResults.map((x) => money(x.m.threeYear.strategicNpv))],
+        ['Break-even confidence', ...scenarioResults.map((x) => sv(x.m.threeYear.breakEven))] ] },
+      { sheet: '3-Year View', heading: 'Cumulative net by month', head: ['Month', 'Cumulative net, hard savings only', 'Cumulative net, incl. avoided cost'],
+        rows: m.threeYear.series.map((r) => [cell(r.month, 'int'), money(r.cumHard), money(r.cumStrategic)]) },
+      sensSection(tornado, `3-year net: ${tornadoLabel} (USD)`, 'money'),
+      benchSection(bench),
+    ],
   };
-  add('Assumptions', [
-    ['Assumption', 'Value'],
-    ['Active developers', inputs.devs], ['LOC per developer per day', inputs.locPerDev],
-    ['Current AI automation (%)', inputs.automation], ['Target AI automation (%)', inputs.targetAutomation],
-    ['Senior engineers', inputs.seniors], ['Review hours per senior per day', inputs.dailyReviewHoursPerSenior],
-    ['Minutes to audit 500 LOC', inputs.minsPer500], ['Senior hourly rate (USD)', inputs.hourlyRate],
-    ['Human-in-the-loop (%)', inputs.humanInTheLoop], ['Savings realization (%)', inputs.savingsRealizationRate],
-    ['Confidence in avoided cost (%)', inputs.avoidedCostConfidence],
-    ['Pricing model', inputs.pricingModel === 'saas' ? 'SaaS license' : 'API tokens'],
-    ['Annual software cost (USD)', c(m.calculatedSoftwareCost, usd)],
-    ['One-time setup cost (USD)', c(inputs.implementationCost, usd)], ['Adoption ramp (months)', inputs.rampMonths],
-    ['Current AI tool cost (USD per year)', c(inputs.currentToolCost, usd)], ['Working days per year', inputs.workingDays],
-    ['How the cleared backlog is valued', inputs.avoidedBasis === 'defects' ? 'Defects avoided' : 'Review effort'],
-    ['Escaped defects per 1k unreviewed LOC', inputs.defectsPer1kLoc], ['Cost per escaped defect (USD)', c(inputs.costPerDefect, usd)],
-    ['Code volume growth per year (%)', inputs.volumeGrowth], ['Hourly rate growth per year (%)', inputs.salaryGrowth], ['Discount rate (%)', inputs.discountRate],
-  ], [38, 18]);
-  add('As-Is vs To-Be', [
-    ['Per day', 'As-Is', 'To-Be'],
-    ['Review demand before automation (h)', c(m.rawReviewDemandHours, hrs), c(m.rawReviewDemandHours, hrs)],
-    ['Human review demand (h)', c(m.asIsHumanDemand, hrs), c(m.toBeTotalHumanDemand, hrs)],
-    ['Senior capacity (h)', c(m.capacityHours, hrs), c(m.capacityHours, hrs)],
-    ['Human review executed (h)', c(m.asIsExecuted, hrs), c(m.toBeExecuted, hrs)],
-    ['Backlog (h)', c(m.asIsBacklog, hrs), c(m.toBeBacklog, hrs)],
-    ['Reviewed by AI (h)', c(m.asIsNetAiHandled, hrs), c(m.toBeNetAiHandled, hrs)],
-    [], ['Per year (steady state)', 'Value'],
-    ['Realized hard savings (USD)', c(m.realizedHardSavings, usd)],
-    ['Avoided cost, 100% (USD, non-cash)', c(m.annualTechDebtValue, usd)],
-    ['Avoided cost after confidence (USD)', c(m.confidenceAdjustedAvoidedCost, usd)],
-    ['Conservative ROI', m.roiPercentage === null ? 'N/A' : c(m.roiPercentage / 100, pct)],
-    ['Strategic ROI', m.strategicRoi === null ? 'N/A' : c(m.strategicRoi / 100, pct)],
-  ], [46, 16, 16]);
-  add('Scenarios', [
-    ['Result', ...scenarioResults.map((s) => s.label)],
-    ['Net change in yearly cost (USD)', ...scenarioResults.map((s) => c(s.m.calculatedSoftwareCost - s.m.realizedHardSavings, usd))],
-    ['Backlog removed per day (h)', ...scenarioResults.map((s) => c(s.m.techDebtClearedDailyHours, hrs))],
-    ['Conservative ROI', ...scenarioResults.map((s) => (s.m.roiPercentage === null ? 'N/A' : c(s.m.roiPercentage / 100, pct)))],
-    ['Strategic ROI', ...scenarioResults.map((s) => (s.m.strategicRoi === null ? 'N/A' : c(s.m.strategicRoi / 100, pct)))],
-    ['3-year net, hard savings only (USD)', ...scenarioResults.map((s) => c(s.m.threeYear.hardNet, usd))],
-    ['3-year net, incl. avoided cost (USD)', ...scenarioResults.map((s) => c(s.m.threeYear.strategicNet, usd))],
-    ['3-year present value, hard savings only (USD)', ...scenarioResults.map((s) => c(s.m.threeYear.hardNpv, usd))],
-    ['3-year present value, incl. avoided cost (USD)', ...scenarioResults.map((s) => c(s.m.threeYear.strategicNpv, usd))],
-    ['Break-even confidence', ...scenarioResults.map((s) => (s.m.threeYear.breakEven === null ? 'Not reachable' : c(s.m.threeYear.breakEven / 100, pct)))],
-  ], [40, 16, 16, 16]);
-  add('3-Year View', [
-    ['Month', 'Cumulative net, hard only (USD)', 'Cumulative net, incl. avoided cost (USD)'],
-    ...m.threeYear.series.map((r) => [r.month, c(r.cumHard, usd), c(r.cumStrategic, usd)]),
-  ], [10, 34, 40]);
-  add('Sensitivity', [
-    [`Impact on 3-year net: ${tornadoLabel}`, 'If worse (USD)', 'If better (USD)'],
-    ...tornado.map((r) => [r.label, c(r.down, usd), c(r.up, usd)]),
-  ], [36, 18, 18]);
-  return wb;
 }
 
 
@@ -661,9 +653,7 @@ export default function VerificationTax() {
   const handleDownloadExcel = async () => {
     setIsGeneratingXlsx(true);
     try {
-      const XLSX = await import('xlsx');
-      const wb = buildWorkbook(XLSX, { inputs, m, scenarioResults, tornado, tornadoLabel });
-      XLSX.writeFile(wb, `ROI_Model_Verification_Tax_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      await downloadXlsx(buildReport({ inputs, m, scenarioResults, tornado, tornadoLabel, verdictText: stripMd(`${verdict.state} ${verdict.outcome} ${verdict.money}`) }));
     } catch (error) {
       console.error("Error generating Excel:", error);
       alert("There was an error generating the Excel file. Please try again.");

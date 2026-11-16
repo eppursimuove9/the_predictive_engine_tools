@@ -6,7 +6,7 @@ import { fmtMoney, fmtX, fmtNum, fmtPct, cell } from '../shared/format.js';
 import { useToolState } from '../shared/toolstate.js';
 import { useUnlock } from '../shared/unlock.jsx';
 import { tornado } from '../shared/sensitivity.js';
-import { downloadPdf, downloadXlsx } from '../shared/report.js';
+import { downloadPdf, downloadXlsx, sensSection, benchSection } from '../shared/report.js';
 import { DEFAULTS, LIMITS, PRESETS, model, verdictFor, SCENARIOS, SENS, BENCH, HOW } from './pipelineCoverage.logic.js';
 
 export default function PipelineCoverage() {
@@ -27,18 +27,20 @@ export default function PipelineCoverage() {
     title: 'Pipeline and Funnel Planner', fileName: 'Pipeline_Planner', verdict: `${verdict.headline} ${verdict.detail}`,
     sections: [
       { heading: 'Assumptions', rows: [
-        ['Revenue target', cell(inputs.target, fmtMoney)], ['Already closed', cell(inputs.closedWon, fmtMoney)], ['Average deal size', cell(inputs.dealSize, fmtMoney)], ['Open qualified pipeline', cell(inputs.openPipeline, fmtMoney)],
-        ['Share of pipeline not real', cell(inputs.haircut, (v) => `${v}%`)], ['Win rate', cell(inputs.winRate, (v) => `${v}%`)], ['Meeting to opportunity', cell(inputs.oppRate, (v) => `${v}%`)], ['Lead to meeting', cell(inputs.meetingRate, (v) => `${v}%`)],
+        ['Revenue target', cell(inputs.target, 'money')], ['Already closed', cell(inputs.closedWon, 'money')], ['Average deal size', cell(inputs.dealSize, 'money')], ['Open qualified pipeline', cell(inputs.openPipeline, 'money')],
+        ['Share of pipeline not real', cell(inputs.haircut, 'pp')], ['Win rate', cell(inputs.winRate, 'pp')], ['Meeting to opportunity', cell(inputs.oppRate, 'pp')], ['Lead to meeting', cell(inputs.meetingRate, 'pp')],
         ['Sales cycle (days)', inputs.salesCycle], ['Days left in period', inputs.daysLeft] ] },
       { heading: 'Results', rows: [
-        ['Left to close', cell(m.remaining, fmtMoney)], ['Real pipeline', cell(m.realPipeline, fmtMoney)], ['Coverage', m.coverage === null ? 'n/a' : cell(m.coverage, fmtX)], ['Coverage needed', cell(m.requiredCoverage, fmtX)],
-        ['Expected to close from pipeline', cell(m.expected, fmtMoney)], ['On track for (% of target)', cell(m.attainment, fmtPct)], ['Expected shortfall', cell(m.gap, fmtMoney)], ['Extra pipeline needed', cell(m.extraPipeline, fmtMoney)] ] },
+        ['Left to close', cell(m.remaining, 'money')], ['Real pipeline', cell(m.realPipeline, 'money')], ['Coverage', m.coverage === null ? 'Met (target already closed)' : cell(m.coverage, 'x')], ['Coverage needed', cell(m.requiredCoverage, 'x')],
+        ['Expected to close from pipeline', cell(m.expected, 'money')], ['On track for (% of target)', cell(m.attainment, 'pp0')], ['Expected shortfall', cell(m.gap, 'money')], ['Extra pipeline needed', cell(m.extraPipeline, 'money')] ] },
       { heading: 'Funnel volumes', head: ['Stage', 'From scratch', 'Shortfall only'], rows: [
-        ['Leads', cell(m.fromScratch.leads, (v) => fmtNum(v)), cell(m.extra.leads, (v) => fmtNum(v))], ['Meetings', cell(m.fromScratch.meetings, (v) => fmtNum(v)), cell(m.extra.meetings, (v) => fmtNum(v))],
-        ['Opportunities', cell(m.fromScratch.opps, (v) => fmtNum(v)), cell(m.extra.opps, (v) => fmtNum(v))], ['Deals', cell(m.fromScratch.deals, (v) => fmtNum(v, 1)), cell(m.extra.deals, (v) => fmtNum(v, 1))] ] },
+        ['Leads', cell(m.fromScratch.leads, 'int'), cell(m.extra.leads, 'int')], ['Meetings', cell(m.fromScratch.meetings, 'int'), cell(m.extra.meetings, 'int')],
+        ['Opportunities', cell(m.fromScratch.opps, 'int'), cell(m.extra.opps, 'int')], ['Deals', cell(m.fromScratch.deals, 'num1'), cell(m.extra.deals, 'num1')] ] },
       { heading: 'Scenarios', head: ['Result', ...scen.map((s) => s.label)], rows: [
-        ['On track for (% of target)', ...scen.map((s) => cell(s.m.attainment, fmtPct))], ['Expected to close', ...scen.map((s) => cell(s.m.expected, fmtMoney))],
-        ['Coverage', ...scen.map((s) => (s.m.coverage === null ? 'n/a' : cell(s.m.coverage, fmtX)))], ['Extra leads needed', ...scen.map((s) => cell(s.m.extra.leads, (v) => fmtNum(v)))] ] },
+        ['On track for (% of target)', ...scen.map((s) => cell(s.m.attainment, 'pp0'))], ['Expected to close', ...scen.map((s) => cell(s.m.expected, 'money'))],
+        ['Coverage', ...scen.map((s) => (s.m.coverage === null ? 'Met' : cell(s.m.coverage, 'x')))], ['Extra leads needed', ...scen.map((s) => cell(s.m.extra.leads, 'int'))] ] },
+      sensSection(tor, 'attainment of target (points)', 'num1'),
+      benchSection(BENCH(inputs, m)),
     ],
   });
 

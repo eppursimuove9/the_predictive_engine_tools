@@ -6,7 +6,7 @@ import { fmtMoney, fmtX, fmtMonths, fmtPct1, cell } from '../shared/format.js';
 import { useToolState } from '../shared/toolstate.js';
 import { useUnlock } from '../shared/unlock.jsx';
 import { tornado } from '../shared/sensitivity.js';
-import { downloadPdf, downloadXlsx } from '../shared/report.js';
+import { downloadPdf, downloadXlsx, sensSection, benchSection } from '../shared/report.js';
 import { DEFAULTS, LIMITS, PRESETS, model, verdictFor, SCENARIOS, SENS, BENCH, HOW } from './unitEconomics.logic.js';
 
 export default function UnitEconomics() {
@@ -21,17 +21,19 @@ export default function UnitEconomics() {
     title: 'CAC, LTV and Payback', fileName: 'Unit_Economics', verdict: `${verdict.headline} ${verdict.detail}`,
     sections: [
       { heading: 'Assumptions', rows: [
-        ['Monthly sales and marketing spend', cell(inputs.spend, fmtMoney)], ['New customers per month', inputs.newCustomers], ['Revenue per customer per month', cell(inputs.arpa, fmtMoney)],
-        ['Gross margin', cell(inputs.grossMargin, (v) => `${v}%`)], ['Monthly churn', cell(inputs.churn, (v) => `${v}%`)], ['Onboarding cost per customer', cell(inputs.onboarding, fmtMoney)],
-        ['Lifetime cap (months)', inputs.lifetimeCap], ['Target LTV to CAC', cell(inputs.targetRatio, (v) => `${v}:1`)] ] },
+        ['Monthly sales and marketing spend', cell(inputs.spend, 'money')], ['New customers per month', inputs.newCustomers], ['Revenue per customer per month', cell(inputs.arpa, 'money')],
+        ['Gross margin', cell(inputs.grossMargin, 'pp')], ['Monthly churn', cell(inputs.churn, 'pp')], ['Onboarding cost per customer', cell(inputs.onboarding, 'money')],
+        ['Lifetime cap (months)', inputs.lifetimeCap], ['Target LTV to CAC (x to 1)', cell(inputs.targetRatio, 'num1')] ] },
       { heading: 'Results', rows: [
-        ['Cost to win a customer (CAC)', cell(m.cac, fmtMoney)], ['Gross profit per customer per month', cell(m.monthlyGp, fmtMoney)], ['Customer lifetime (months)', cell(m.lifetime, (v) => v.toFixed(1))],
-        ['Lifetime value (LTV)', cell(m.ltv, fmtMoney)], ['LTV to CAC', cell(m.ltvCac, fmtX)], ['CAC payback, standard (months)', cell(m.paybackStd, (v) => v.toFixed(1))],
-        ['Cohort break-even (month)', m.breakeven ?? 'Not within lifetime cap'], ['Highest CAC that still meets target', cell(m.maxCac, fmtMoney)] ] },
+        ['Cost to win a customer (CAC)', cell(m.cac, 'money')], ['Gross profit per customer per month', cell(m.monthlyGp, 'money')], ['Customer lifetime (months)', cell(m.lifetime, 'num1')],
+        ['Lifetime value (LTV)', cell(m.ltv, 'money')], ['LTV to CAC', cell(m.ltvCac, 'x')], ['CAC payback, standard (months)', cell(m.paybackStd, 'num1')],
+        ['Cohort break-even (month)', m.breakeven ?? 'Not within lifetime cap'], ['Highest CAC that still meets target', cell(m.maxCac, 'money')] ] },
       { heading: 'Scenarios', head: ['Result', ...scen.map((s) => s.label)], rows: [
-        ['CAC', ...scen.map((s) => cell(s.m.cac, fmtMoney))], ['LTV', ...scen.map((s) => cell(s.m.ltv, fmtMoney))],
-        ['LTV to CAC', ...scen.map((s) => cell(s.m.ltvCac, fmtX))], ['Payback (months)', ...scen.map((s) => cell(s.m.paybackStd, (v) => v.toFixed(1)))] ] },
-      { heading: 'Cohort gross profit per customer (cumulative)', head: ['Month', 'Gross profit', 'CAC'], rows: m.series.filter((p) => p.month % 6 === 0).map((p) => [p.month, cell(p.cum, fmtMoney), cell(p.cac, fmtMoney)]) },
+        ['CAC', ...scen.map((s) => cell(s.m.cac, 'money'))], ['LTV', ...scen.map((s) => cell(s.m.ltv, 'money'))],
+        ['LTV to CAC', ...scen.map((s) => cell(s.m.ltvCac, 'x'))], ['Payback (months)', ...scen.map((s) => cell(s.m.paybackStd, 'num1'))] ] },
+      { heading: 'Cohort gross profit per customer (cumulative)', head: ['Month', 'Gross profit', 'CAC'], rows: m.series.filter((p) => p.month % 6 === 0).map((p) => [p.month, cell(p.cum, 'money'), cell(p.cac, 'money')]) },
+      sensSection(tor, 'LTV to CAC (x)', 'x'),
+      benchSection(BENCH(inputs, m)),
     ],
   });
 

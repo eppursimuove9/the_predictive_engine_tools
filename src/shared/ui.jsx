@@ -174,8 +174,8 @@ export function PresetBar({ presets, activeId, onLoad, onReset }) {
           const active = activeId === pr.id;
           return (
             <button key={pr.id} onClick={() => onLoad(pr)} aria-pressed={active}
-              className={`rounded-lg border-2 px-2 py-2 text-left transition-colors ${active ? 'border-[#f52e01] bg-orange-50' : 'border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
-              <div className={`text-sm font-bold leading-tight flex items-center justify-between gap-1 ${active ? 'text-[#f52e01]' : 'text-slate-900'}`}>{pr.name}{active && <span aria-hidden="true">✓</span>}</div>
+              className={`min-w-0 rounded-lg border-2 px-1.5 sm:px-2 py-2 text-left break-words transition-colors ${active ? 'border-[#f52e01] bg-orange-50' : 'border-slate-200 hover:bg-slate-50 hover:border-slate-300'}`}>
+              <div className={`text-xs sm:text-sm font-bold leading-tight flex items-center justify-between gap-1 ${active ? 'text-[#f52e01]' : 'text-slate-900'}`}>{pr.name}{active && <span aria-hidden="true">✓</span>}</div>
               <div className="text-xs text-slate-600 leading-tight">{pr.note}</div>
             </button>
           );
@@ -210,13 +210,20 @@ export function KpiGrid({ items }) {
   const cols = items.length === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' : (items.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3');
   return (
     <div className={`grid grid-cols-1 ${cols} gap-4`}>
-      {items.map((k) => (
-        <div key={k.label} className="min-w-0 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-          <div className="text-slate-600 text-xs font-bold uppercase tracking-wide mb-2 leading-tight">{k.label}</div>
-          <div className={`text-3xl font-black tabular-nums leading-tight break-words ${KPI_TONE[k.tone || 'neutral']}`}>{k.value}</div>
-          {k.note && <div className="text-sm text-slate-600 mt-1 leading-snug">{k.note}</div>}
-        </div>
-      ))}
+      {items.map((k) => {
+        const len = String(k.value).length;
+        // The value never wraps: its font shrinks with the length of the text and the width of its own card.
+        const size = `min(1.875rem, ${(94 / (0.66 * Math.max(len, 4))).toFixed(2)}cqw)`;
+        return (
+          <div key={k.label} className="min-w-0 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div className="text-slate-600 text-xs font-bold uppercase tracking-wide mb-2 leading-tight">{k.label}</div>
+            <div style={{ containerType: 'inline-size' }}>
+              <div style={{ fontSize: size }} className={`font-black tabular-nums leading-tight whitespace-nowrap ${KPI_TONE[k.tone || 'neutral']}`}>{k.value}</div>
+            </div>
+            {k.note && <div className="text-sm text-slate-600 mt-1 leading-snug">{k.note}</div>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -336,7 +343,7 @@ export function BenchmarkList({ items, planning }) {
                 </span>
               </div>
               <div className="text-slate-700 mt-1">Your value: <strong>{v === null || v === undefined ? 'n/a' : `${Math.round(v * 100) / 100} ${b.unit}`}</strong>. Reference: {b.refText || `${b.range[0]} to ${b.range[1]} ${b.unit}`}.</div>
-              <div className="text-slate-600 mt-1">{b.note} Source: <a href={b.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-900">{b.source}</a></div>
+              <div className="text-slate-600 mt-1">{b.note} Source: {b.url ? <a href={b.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-900">{b.source}</a> : b.source}</div>
             </div>
           );
         })}

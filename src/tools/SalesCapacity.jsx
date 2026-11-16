@@ -6,7 +6,7 @@ import { fmtMoney, fmtNum, fmtPct, cell } from '../shared/format.js';
 import { useToolState } from '../shared/toolstate.js';
 import { useUnlock } from '../shared/unlock.jsx';
 import { tornado } from '../shared/sensitivity.js';
-import { downloadPdf, downloadXlsx } from '../shared/report.js';
+import { downloadPdf, downloadXlsx, sensSection, benchSection } from '../shared/report.js';
 import { DEFAULTS, LIMITS, PRESETS, model, verdictFor, SCENARIOS, hiresOf, SENS, BENCH, HOW } from './salesCapacity.logic.js';
 
 export default function SalesCapacity() {
@@ -21,14 +21,16 @@ export default function SalesCapacity() {
     title: 'Sales Capacity and Quota Planner', fileName: 'Sales_Capacity', verdict: `${verdict.headline} ${verdict.detail}`,
     sections: [
       { heading: 'Assumptions', rows: [
-        ['Bookings target (12 months)', cell(inputs.target, fmtMoney)], ['Quota per ramped rep', cell(inputs.quota, fmtMoney)], ['Average quota attainment', cell(inputs.attainment, (v) => `${v}%`)], ['Ramped reps today', inputs.rampedReps],
-        ['Ramp time (months)', inputs.rampMonths], ['Annual rep turnover', cell(inputs.attrition, (v) => `${v}%`)], ['New reps start in month', inputs.startMonth], ['Cost per rep per year', cell(inputs.costPerRep, fmtMoney)] ] },
+        ['Bookings target (12 months)', cell(inputs.target, 'money')], ['Quota per ramped rep', cell(inputs.quota, 'money')], ['Average quota attainment', cell(inputs.attainment, 'pp')], ['Ramped reps today', inputs.rampedReps],
+        ['Ramp time (months)', inputs.rampMonths], ['Annual rep turnover', cell(inputs.attrition, 'pp')], ['New reps start in month', inputs.startMonth], ['Cost per rep per year', cell(inputs.costPerRep, 'money')] ] },
       { heading: 'Results', rows: [
-        ['Expected bookings from current team', cell(m.existingCap, fmtMoney)], ['Share of target covered', cell(m.coveredPct, fmtPct)], ['Gap to target', cell(Math.max(0, m.gap), fmtMoney)],
-        ['Reps needed, simple math', cell(m.naiveHires, (v) => fmtNum(v, 1))], ['Hires needed, with ramp and turnover', m.hiresUp === null ? 'Not reachable' : m.hiresUp], ['Cost of new hires this year', cell(m.hireCost, fmtMoney)], ['Bookings with the plan', cell(m.booked, fmtMoney)] ] },
+        ['Expected bookings from current team', cell(m.existingCap, 'money')], ['Share of target covered', cell(m.coveredPct, 'pp0')], ['Gap to target', cell(Math.max(0, m.gap), 'money')],
+        ['Reps needed, simple math', cell(m.naiveHires, 'num1')], ['Hires needed, with ramp and turnover', m.hiresUp === null ? 'Not reachable' : m.hiresUp], ['Cost of new hires this year', cell(m.hireCost, 'money')], ['Bookings with the plan', cell(m.booked, 'money')] ] },
       { heading: 'Hires needed by start month', head: ['Start month', 'Hires needed'], rows: m.byStart.map((b) => [b.month, b.hires === null ? 'Not reachable' : b.hires]) },
       { heading: 'Scenarios', head: ['Result', ...scen.map((s) => s.label)], rows: [
-        ['Hires needed', ...scen.map((s) => (s.m.hiresUp === null ? 'Not reachable' : s.m.hiresUp))], ['Bookings from current team', ...scen.map((s) => cell(s.m.existingCap, fmtMoney))], ['Cost of new hires', ...scen.map((s) => cell(s.m.hireCost, fmtMoney))] ] },
+        ['Hires needed', ...scen.map((s) => (s.m.hiresUp === null ? 'Not reachable' : s.m.hiresUp))], ['Bookings from current team', ...scen.map((s) => cell(s.m.existingCap, 'money'))], ['Cost of new hires', ...scen.map((s) => cell(s.m.hireCost, 'money'))] ] },
+      sensSection(tor, 'hires needed (positive = fewer hires)', 'num1'),
+      benchSection(BENCH(inputs)),
     ],
   });
 

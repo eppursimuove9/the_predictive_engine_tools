@@ -6,7 +6,7 @@ import { fmtMoney, signedMoney, fmtPct1, cell } from '../shared/format.js';
 import { useToolState } from '../shared/toolstate.js';
 import { useUnlock } from '../shared/unlock.jsx';
 import { tornado } from '../shared/sensitivity.js';
-import { downloadPdf, downloadXlsx } from '../shared/report.js';
+import { downloadPdf, downloadXlsx, sensSection, benchSection } from '../shared/report.js';
 import { DEFAULTS, LIMITS, PRESETS, model, verdictFor, SCENARIOS, SENS, BENCH, HOW } from './retentionImpact.logic.js';
 
 export default function RetentionImpact() {
@@ -22,17 +22,19 @@ export default function RetentionImpact() {
     title: 'Retention and NRR Impact', fileName: 'Retention_Impact', verdict: `${verdict.headline} ${verdict.detail}`,
     sections: [
       { heading: 'Assumptions', rows: [
-        ['Starting ARR', cell(inputs.arr, fmtMoney)], ['Annual churn', cell(inputs.churn, (v) => `${v}%`)], ['Annual downgrades', cell(inputs.contraction, (v) => `${v}%`)], ['Annual expansion', cell(inputs.expansion, (v) => `${v}%`)],
-        ['New revenue added per year', cell(inputs.newArr, fmtMoney)], ['Gross margin', cell(inputs.grossMargin, (v) => `${v}%`)], ['Retention program cost per year', cell(inputs.programCost, fmtMoney)], ['Program churn reduction (points)', inputs.programReduction] ] },
+        ['Starting ARR', cell(inputs.arr, 'money')], ['Annual churn', cell(inputs.churn, 'pp')], ['Annual downgrades', cell(inputs.contraction, 'pp')], ['Annual expansion', cell(inputs.expansion, 'pp')],
+        ['New revenue added per year', cell(inputs.newArr, 'money')], ['Gross margin', cell(inputs.grossMargin, 'pp')], ['Retention program cost per year', cell(inputs.programCost, 'money')], ['Program churn reduction (points)', inputs.programReduction] ] },
       { heading: 'Results', rows: [
-        ['Gross revenue retention (GRR)', cell(m.grr, fmtPct1)], ['Net revenue retention (NRR)', cell(m.nrr, fmtPct1)], ['Change in ARR from existing customers per year', cell(m.existingChange, signedMoney)],
-        ['New revenue needed to stand still per year', cell(m.newNeededToStandStill, fmtMoney)], ['ARR in year 3', cell(m.arr3, fmtMoney)], ['Value of 1 churn point after 3 years (ARR)', cell(m.pointArr3, fmtMoney)] ] },
+        ['Gross revenue retention (GRR)', cell(m.grr, 'pp')], ['Net revenue retention (NRR)', cell(m.nrr, 'pp')], ['Change in ARR from existing customers per year', cell(m.existingChange, 'money')],
+        ['New revenue needed to stand still per year', cell(m.newNeededToStandStill, 'money')], ['ARR in year 3', cell(m.arr3, 'money')], ['Value of 1 churn point after 3 years (ARR)', cell(m.pointArr3, 'money')] ] },
       { heading: 'Retention program (3 years)', rows: [
-        ['Extra ARR in year 3', cell(m.incArr3, fmtMoney)], ['Extra gross profit', cell(m.incGp, fmtMoney)], ['Program cost', cell(m.cost3, fmtMoney)], ['Net', cell(m.programNet, signedMoney)],
-        ['ROI', m.programRoi === null ? 'n/a' : cell(m.programRoi, (v) => `${Math.round(v)}%`)], ['Churn points needed to break even', m.breakEvenPts === null ? 'n/a' : cell(m.breakEvenPts, (v) => v.toFixed(1))] ] },
-      { heading: 'ARR by year', head: ['Year', 'Base case', 'With program', 'Existing customers only'], rows: m.series.map((s) => [s.year, cell(s.base, fmtMoney), cell(s.program, fmtMoney), cell(s.existing, fmtMoney)]) },
+        ['Extra ARR in year 3', cell(m.incArr3, 'money')], ['Extra gross profit', cell(m.incGp, 'money')], ['Program cost', cell(m.cost3, 'money')], ['Net', cell(m.programNet, 'money')],
+        ['ROI', cell(m.programRoi, 'pp0')], ['Churn points needed to break even', cell(m.breakEvenPts, 'num1')] ] },
+      { heading: 'ARR by year', head: ['Year', 'Base case', 'With program', 'Existing customers only'], rows: m.series.map((s) => [s.year, cell(s.base, 'money'), cell(s.program, 'money'), cell(s.existing, 'money')]) },
       { heading: 'Scenarios', head: ['Result', ...scen.map((s) => s.label)], rows: [
-        ['NRR', ...scen.map((s) => cell(s.m.nrr, fmtPct1))], ['GRR', ...scen.map((s) => cell(s.m.grr, fmtPct1))], ['ARR in year 3', ...scen.map((s) => cell(s.m.arr3, fmtMoney))], ['Program net over 3 years', ...scen.map((s) => cell(s.m.programNet, signedMoney))] ] },
+        ['NRR', ...scen.map((s) => cell(s.m.nrr, 'pp'))], ['GRR', ...scen.map((s) => cell(s.m.grr, 'pp'))], ['ARR in year 3', ...scen.map((s) => cell(s.m.arr3, 'money'))], ['Program net over 3 years', ...scen.map((s) => cell(s.m.programNet, 'money'))] ] },
+      sensSection(tor, 'ARR in year 3 (USD)', 'money'),
+      benchSection(BENCH(inputs, m)),
     ],
   });
 
