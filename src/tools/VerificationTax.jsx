@@ -1026,7 +1026,7 @@ export default function VerificationTax() {
           </div>
 
           {/* RIGHT COLUMN: Results */}
-          <div ref={resultsRef} className="xl:col-span-8 space-y-6 min-w-0 scroll-mt-4">
+          <div ref={resultsRef} className="xl:col-span-8 space-y-6 min-w-0 scroll-mt-24">
 
             {/* QUICK GUIDE (free, helps first-time visitors) */}
             {showGuide && (

@@ -20,12 +20,12 @@ function ToolsMenu() {
   }, [open]);
   const close = () => setOpen(false);
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref}>
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="true" className="flex items-center gap-1 text-sm font-semibold text-slate-200 hover:text-white px-2 py-2">
         Tools <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 sm:left-0 sm:right-auto mt-2 z-50 w-[min(92vw,860px)] max-h-[80vh] overflow-y-auto bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-5">
+        <div role="menu" className="fixed inset-x-3 top-[4.5rem] sm:absolute sm:inset-x-auto sm:left-auto sm:right-6 sm:top-full sm:mt-2 z-50 sm:w-[min(92vw,860px)] max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto bg-white text-slate-900 rounded-2xl shadow-2xl border border-slate-200 p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
             {CATEGORIES.map((c) => (
               <div key={c.slug}>
@@ -47,8 +47,8 @@ export default function Layout({ title, children }) {
   const { isUnlocked, openUnlock } = useUnlock();
   useEffect(() => { document.title = title ? `${title} | The Predictive Engine` : 'GTM and RevOps Tools | The Predictive Engine'; }, [title]);
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-orange-200 overflow-x-hidden flex flex-col">
-      <header className="bg-[#0B1120] text-white px-4 sm:px-6 py-4 flex justify-between items-center shadow-md relative z-40">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-orange-200 overflow-x-clip flex flex-col">
+      <header className="bg-[#0B1120] text-white px-4 sm:px-6 py-4 flex justify-between items-center shadow-md sticky top-0 z-[45]">
         <Link to="/" className="flex items-center gap-3">
           <img src={LOGO} alt="The Predictive Engine logo" className="object-contain mix-blend-screen" style={{ width: 40, height: 40, flexShrink: 0 }} />
           <span className="font-bold tracking-wide text-lg hidden sm:inline-block">The Predictive Engine <span className="text-[#f52e01] font-light">Tools</span></span>

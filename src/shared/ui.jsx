@@ -247,7 +247,7 @@ export function ToolLayout({ controls, results }) {
     <>
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         <div className="xl:col-span-4 space-y-6">{controls}</div>
-        <div ref={ref} className="xl:col-span-8 space-y-6 min-w-0 scroll-mt-4">{results}</div>
+        <div ref={ref} className="xl:col-span-8 space-y-6 min-w-0 scroll-mt-24">{results}</div>
       </div>
       {!inView && (
         <button onClick={jump} className="xl:hidden fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-[#f52e01] hover:bg-[#ff4117] text-white text-sm font-bold px-5 py-3 shadow-lg">
